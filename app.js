@@ -70,12 +70,12 @@ app.use(cookieParser());
 // require passport auth
 require("./auth/auth");
 
-/*
-app.get('/game.html', passport.authenticate('jwt', { session : false }), function (req, res) {
-  res.sendFile(__dirname + '/public/game.html');
-});
-*/
+// Use this route for production. game.html will be private
+// app.get('/game.html', passport.authenticate('jwt', { session : false }), function (req, res) {
+//   res.sendFile(__dirname + '/public/game.html');
+// });
 
+// Use this route for development, game.html will be pulbic
 app.get("/game.html", function(req, res) {
   res.sendFile(__dirname + "/public/game.html");
 });
