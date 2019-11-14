@@ -10,6 +10,8 @@ const passport = require("passport");
 const routes = require("./routes/main");
 const secureRoutes = require("./routes/secure");
 const passwordRoutes = require("./routes/password");
+const asyncMiddleware = require("./middleware/asyncMiddleware");
+const ChatModel = require("./models/chatModel");
 
 // setup mongo connection
 const uri = process.env.MONGO_CONNECTION_URL;
@@ -71,14 +73,18 @@ app.use(cookieParser());
 require("./auth/auth");
 
 // Use this route for production. game.html will be private
-// app.get('/game.html', passport.authenticate('jwt', { session : false }), function (req, res) {
-//   res.sendFile(__dirname + '/public/game.html');
-// });
+app.get(
+  "/game.html",
+  passport.authenticate("jwt", { session: false }),
+  function(req, res) {
+    res.sendFile(__dirname + "/public/game.html");
+  }
+);
 
 // Use this route for development, game.html will be pulbic
-app.get("/game.html", function(req, res) {
-  res.sendFile(__dirname + "/public/game.html");
-});
+// app.get("/game.html", function(req, res) {
+//   res.sendFile(__dirname + "/public/game.html");
+// });
 
 app.use(express.static(__dirname + "/public"));
 
@@ -90,6 +96,22 @@ app.get("/", function(req, res) {
 app.use("/", routes);
 app.use("/", passwordRoutes);
 app.use("/", passport.authenticate("jwt", { session: false }), secureRoutes);
+
+// chat route
+app.post(
+  "/submit-chatline",
+  passport.authenticate("jwt", { session: false }),
+  asyncMiddleware(async (req, res, next) => {
+    const { message } = req.body;
+    const { email, name } = req.user;
+    await ChatModel.create({ email, message });
+    io.emit("new message", {
+      username: name,
+      message
+    });
+    res.status(200).json({ status: "ok" });
+  })
+);
 
 // catch all other routes
 app.use((req, res, next) => {
